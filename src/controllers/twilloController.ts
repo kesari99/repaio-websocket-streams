@@ -1,7 +1,5 @@
 import twilio from 'twilio';
 import dotenv from 'dotenv';
-import DeepgramTranscriber from '../stt/deepgram-transcriber.js';
-import { registerTranscriber } from '../app.js';
 
 dotenv.config();
 

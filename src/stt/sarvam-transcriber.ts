@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events';
 import WebSocket, { WebSocket as WSClient } from 'ws';
+import dotenv from "dotenv"
+import { upsampleLinear16bitPCM } from '../utils/convertTo16bitPCM.js';
 
 interface TranscriptData {
     data: {
@@ -9,11 +11,10 @@ interface TranscriptData {
         diarized_code: string;
         metrics: { audio_duration: number, processing_latency: number }
 
-    },
-    is_final: boolean;
-    confidence: number;
-    speaker?: string
+    }
 }
+
+dotenv.config()
 
 
 class SarvamTranscriber extends EventEmitter {
@@ -53,13 +54,12 @@ class SarvamTranscriber extends EventEmitter {
             this.emit('connected');
         });
 
-        this.#ws.on('message', (data: TranscriptData) => {
+        this.#ws.on('message', (data: Buffer) => {
             try {
-                if (data.is_final) {
-                    const text = data.data.transcript;
-                    console.log("� Transcribed text:", text);
-                    this.emit('transcript', text);
-                }
+                    const transcriptData: TranscriptData = JSON.parse(data as unknown as string);
+                    console.log("� Transcribed text:", transcriptData.data.transcript);
+                    this.emit('transcript', transcriptData  );
+                
 
 
             } catch (error) {
@@ -87,7 +87,7 @@ class SarvamTranscriber extends EventEmitter {
 
 
 
-    sendAudioData(audioBuffer: Buffer): void {
+    sendAudioData(chunk: string): void {
         if (!this.#ws) {
             console.error("❌ WebSocket not initialized. Call start() first.");
             return;
@@ -98,7 +98,7 @@ class SarvamTranscriber extends EventEmitter {
 
             const message = {
                 audio: {
-                    data: audioBuffer.toString('base64'),
+                    data: upsampleLinear16bitPCM(Buffer.from(chunk, "base64")).toString('base64'),
                     encoding: "audio/wav",
                     sample_rate: 16000
                 }
@@ -162,3 +162,7 @@ class SarvamTranscriber extends EventEmitter {
 }
 
 export default SarvamTranscriber;
+
+
+
+// const sarvam = new SarvamTranscriber('en-IN')

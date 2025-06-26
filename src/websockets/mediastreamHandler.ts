@@ -109,7 +109,7 @@ export async function registerMediaStream(
     // });
 
     let streamSid: string | null = null;
-    let transcriber1: DeepgramTranscriber | SarvamTranscriber | null = null;
+    let transcriber1:  SarvamTranscriber | null = null;
     const wavFile = new WaveFile();
     let muloArray: string[] = [];
     let pcmArray: string[] = []
@@ -147,50 +147,18 @@ export async function registerMediaStream(
               muloArray.push(mulawBuffer.toString("base64"))
 
 
-
-              // wavFile.fromScratch(1, 8000, '8m', buffer);
-              // wavFile.fromMuLaw();
-              // const decodedBuffer = Buffer.from((wavFile as any).data.samples);
-              // wavFile.toSampleRate(16000); // 🔄 Resample to 16kHz
-              // const rawPCMBuffer = Buffer.from((wavFile.data as any).samples); // Step 4: Get PCM as Buffer
-              // const base64String: any = Buffer.from(rawPCMBuffer).toString('base64');
-
-              // const wav = new WaveFile();
-              // wav.fromScratch(1, 8000, '8m', Buffer.from(data.media.payload, "base64"));
-              // wav.fromMuLaw();
-              // You can resample.
-              // wav.toSampleRate(16000);
-              // You can write this straight to a file (will have the headers)
-              // const results = wav.toBuffer();
-              // Or you can access the samples without the WAV header
-              // const samples = (wav.data as any).samples;
-              // const pcmbuffer = Buffer.from(samples.buffer);
-
-
-              
-
-
-              const pcm8kHz = decodeMuLawToPCM(data.media.payload);
-
-
-              const pcm16kHz = upsampleTo16kHz(pcm8kHz);
-
               const base64Audio = data.media.payload;
               const muLawBuffer = Buffer.from(base64Audio, 'base64');
               const pcmBuffer = convertMuLawToPCM(muLawBuffer);
 
               const upsamplepcmBuffer = upsampleTo16kHz(pcmBuffer)
 
-              pcmArray.push(pcmBuffer.toString('base64'))
+              pcmArray.push(upsamplepcmBuffer.toString('base64'))
 
               // console.log("audio string", pcm16kHz.toString("base64"))
 
 
-
-
-
-
-              transcriber1.sendAudioData(upsamplepcmBuffer);
+              transcriber1.sendAudioData(pcmBuffer.toString('base64'));
             } else {
               console.log('⚠️ Transcriber not ready, skipping audio');
             }
@@ -201,8 +169,8 @@ export async function registerMediaStream(
             break;
 
           case 'stop':
-            writePCMToWav(pcmArray, "pcm.wav")
-            writeMuLawToWav(muloArray, "mulo.wav")
+            // writePCMToWav(pcmArray, "pcm.wav")
+            // writeMuLawToWav(muloArray, "mulo.wav")
 
             exec('aplay mulo.wav', (err) => {
               if (err) {

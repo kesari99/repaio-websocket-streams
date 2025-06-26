@@ -1,5 +1,11 @@
 import alawmulaw from 'alawmulaw';
 const { mulaw } = alawmulaw;
+import wavefilePkg from 'wavefile'; 
+const { WaveFile } = wavefilePkg; 
+
+
+
+
 /**
  * Convert base64-encoded mu-law audio to PCM 16-bit LE Buffer.
  * Assumes input is 8kHz mu-law from Twilio.
@@ -26,10 +32,7 @@ export function decodeMuLawToPCM(base64MuLaw: string): Buffer {
   }
   
 
-/**
- * Upsample PCM 8kHz to 16kHz by sample duplication.
- * Simple approach for real-time compatibility.
- */
+
 export function upsampleTo16kHz(pcm8k: Buffer): Buffer {
     // Interpret incoming buffer as Int16Array
     const view8k = new Int16Array(
@@ -55,14 +58,34 @@ export function upsampleTo16kHz(pcm8k: Buffer): Buffer {
   /**
  * Converts an 8-bit Mu-Law Buffer to a 16-bit signed PCM Buffer.
  */
-export function convertMuLawToPCM(muLawBuffer: Buffer): Buffer {
-  const pcmBuffer = Buffer.alloc(muLawBuffer.length * 2); // Each PCM sample is 2 bytes
-
-  for (let i = 0; i < muLawBuffer.length; i++) {
-    const muLawByte = muLawBuffer[i]; // get single 8-bit sample
-    const pcmSample = mulaw.decode(Uint8Array.from([muLawByte]))[0];
-    pcmBuffer.writeInt16LE(pcmSample, i * 2); // write 2-byte PCM sample
+  export function convertMuLawToPCM(muLawBuffer: Buffer): Buffer {
+    const wav = new WaveFile();
+    wav.fromScratch(1, 8000, '8m', muLawBuffer);
+    wav.fromMuLaw();
+    return Buffer.from((wav.data as any).samples);
   }
 
-  return pcmBuffer;
+
+  export const upsampleLinear16bitPCM = (buffer: Buffer) => {
+    const inputSamples = buffer.length / 2;
+    const outputBuffer = Buffer.alloc(buffer.length * 2); // 2x samples
+
+    for (let i = 0; i < inputSamples - 1; i++) {
+        const sample1 = buffer.readInt16LE(i * 2);
+        const sample2 = buffer.readInt16LE((i + 1) * 2);
+
+        // Write original sample
+        outputBuffer.writeInt16LE(sample1, i * 4);
+
+        // Interpolate
+        const interpolated = Math.floor((sample1 + sample2) / 2);
+        outputBuffer.writeInt16LE(interpolated, i * 4 + 2);
+    }
+
+    // Last sample — just repeat it
+    const lastSample = buffer.readInt16LE((inputSamples - 1) * 2);
+    outputBuffer.writeInt16LE(lastSample, (inputSamples - 1) * 4);
+    outputBuffer.writeInt16LE(lastSample, (inputSamples - 1) * 4 + 2);
+
+    return outputBuffer;
 }
