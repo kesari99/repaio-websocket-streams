@@ -5,12 +5,14 @@ import WebSocket from "ws";
 import dotenv from "dotenv";
 import twilio from "twilio";
 import { registerMediaStream } from "./websockets/mediastreamHandler.js";
+import { registerExotelMediaStream } from "./websockets/exotelMediaStreamHandler.js";
 import { callRoutes } from "./routes/callRoutes.js";
 import DeepgramTranscriber from "./stt/deepgram-transcriber.js";
 import SarvamTranscriber from "./stt/sarvam-transcriber.js";
 import { AIRoutes } from "./routes/airoutes.js";
 import { PlayHumeAudio } from "./routes/hume.routes.js";
 import { GrokRoutes } from "./routes/grok.routes.js";
+import { MicRoutes } from "./routes/mic.routes.js";
 
 // Load environment variables first
 dotenv.config();
@@ -45,6 +47,7 @@ app.register(callRoutes);
 app.register(AIRoutes);
 app.register(PlayHumeAudio);
 app.register(GrokRoutes);
+app.register(MicRoutes);
 
 // Example using Express
 app.get("/plivo-answer", (req, res) => {
@@ -70,6 +73,15 @@ app.register(async function (app) {
   );
 });
 
+app.register(async function (app) {
+  await registerExotelMediaStream(app);
+});
+
+app.post("/exotel-status", async (req, reply) => {
+  console.log("[Exotel] status callback:", req.body);
+  return reply.send({ ok: true });
+});
+
 export function registerTranscriber(
   streamSid: string,
   transcriber: DeepgramTranscriber | SarvamTranscriber,
@@ -83,5 +95,12 @@ app.listen({ port: port }, (err) => {
     console.error(err);
     process.exit(1);
   }
+  const publicBaseUrl = (
+    process.env.PUBLIC_BASE_URL ??
+    "https://dingo-suitable-accurately.ngrok-free.app"
+  ).replace(/\/+$/, "");
+  const wsBase = publicBaseUrl.replace(/^http/, "ws");
   console.log(`Web Server is running on port ${port}`);
+  console.log(`[Exotel] StatusCallback URL: ${publicBaseUrl}/exotel-status`);
+  console.log(`[Exotel] Voicebot stream URL: ${wsBase}/exotel-stream`);
 });

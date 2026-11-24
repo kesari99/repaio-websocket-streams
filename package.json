@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && node dist/app.js",
-    "dev": "nodemon --exec node --loader ts-node/esm src/app.ts"
+    "dev": "tsx watch src/app.ts"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +20,7 @@
     "@types/ws": "^8.18.1",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3"
   },
   "dependencies": {
@@ -36,11 +37,13 @@
     "@types/wav": "^1.0.4",
     "ai": "^6.0.138",
     "alawmulaw": "^6.0.0",
+    "axios": "^1.16.0",
     "body-parser": "^2.2.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "fastify": "^5.3.3",
     "hume": "^0.15.15",
+    "node-record-lpcm16": "^1.0.1",
     "openai": "^6.33.0",
     "pg": "^8.16.0",
     "play-sound": "^1.1.6",
